@@ -44,7 +44,15 @@ class Admin:
 				product.quantity = quantity
 				productsList.append(product)
 				break
-			
+	
+	def viewOrdersPlaced(self):
+		for order in ordersList:
+			print "Customer Id: ",order[0]
+			print "Product Id: ",order[1]
+			print "Product Name: ",order[2]
+			print "Product Quantity: ",order[3]
+			print "Product Price: ",order[4]			
+			print "**************"
 
     def makeShipment(self):
 		pass
@@ -109,20 +117,26 @@ class Customer:
 	  
 	def makePayment(self,payment):
 		for product in self.cart.productsList:
+
+			for prod in productsList:
+				if prod.Id == product.Id:
+					product.quantity -= quantity
+
+					if product.quantity == 0:
+						productsList.remove(product)	 
+
 			payment.amount += product.price
 			self.productsBought.append(product)
 			self.deleteFromCart(product.Id,product.quantity,False)
-		self.paymentList.append(payment)	
+			ordersList.append((self.Id,product.Id,product.name,product.price,product.quantity))
+		self.paymentList.append(payment)
+
 		  
 	def addToCart(self,productId,quantity):
 		for product in productsList:
 			if product.Id == productId:
 				productBought = Product(product.Id,product.name,product.price,quantity,product.group,
 										product.subgroup)
-				product.quantity -= quantity
-				
-				if product.quantity == 0:
-					productsList.remove(product)
 
 				self.cart.productsList.append(productBought)
 				self.cart.numberOfProduct = self.cart.numberOfProduct + productBought.quantity
@@ -320,7 +334,6 @@ def createNewAccount():
 	
 	print "Enter a unique username"
 	
-	
 	while True:
 
 		username = raw_input()
@@ -350,6 +363,8 @@ def createNewAccount():
 
 def runAsAdmin(adminUser):
 	
+	print "********** Welcome ",adminUser.name,"***********"
+
 	while True:
 
 		print "Press 1 to view products"
@@ -357,9 +372,10 @@ def runAsAdmin(adminUser):
 		print "Press 3 to add products"
 		print "Press 4 to delete product"
 		print "Press 5 to modify product"
-		print "Press 6 to make shipment"
-		print "Press 7 to confirm delivery"
-		print "Press 8 to exit"
+		print "Press 6 to view orders placed"
+		print "Press 7 to make shipment"
+		print "Press 8 to confirm delivery"
+		print "Press 9 to exit"
 
 		userInput = int(raw_input())
 
@@ -370,8 +386,11 @@ def runAsAdmin(adminUser):
 			adminUser.viewCustomerList()	
 
 		elif userInput == 3:
-			print "Enter product Id"
-			id_input = raw_input()
+			
+			if len(productsList) > 0:
+				id_input = int(productsList[-1].Id)+1
+			else:	
+				id_input = 1
 			
 			print "Enter name"
 			name = raw_input()
@@ -405,24 +424,30 @@ def runAsAdmin(adminUser):
 			adminUser.modifyProduct(Id)
 			
 		elif userInput == 6:
+			adminUser.viewOrdersPlaced()	
+
+		elif userInput == 7:
 			adminUser.makeShipment()
 		
-		elif userInput == 7:
+		elif userInput == 8:
 			adminUser.confirmDelivery()	
 
-		elif userInput == 8:
+		elif userInput == 9:
 
 			adminFile = open('admin_file','wb')
 			regUserFile = open('regUser_file','wb')
 			prodListFile = open('product_file','wb')
+			ordersListFile = open('orders_file','wb')
 			
 			pickle.dump(adminAccounts,adminFile)
 			pickle.dump(registeredCustomers,regUserFile)
 			pickle.dump(productsList,prodListFile)
+			pickle.dump(ordersList,ordersListFile)
 			
 			adminFile.close()
 			regUserFile.close()
 			prodListFile.close()
+			ordersListFile.close()
 
 			sys.exit()	
 
@@ -430,6 +455,9 @@ def runAsAdmin(adminUser):
 			print "Invalid input"		
 
 def runAsGuest(guestUser):
+
+	print "********* Welcome Guest ************"
+
 	while True:
 		print "Press 1 to view products"
 		print "Press 2 to create a new account"
@@ -438,27 +466,31 @@ def runAsGuest(guestUser):
 		userInput = int(raw_input())
 
 		if userInput == 1:
-
 			guestUser.viewProduct()
+
 		elif userInput == 2:	
 			regUser = createNewAccount()
 			print "New account created successfully"
 			print "Please login as registered user"
 			uType, user = userLogin()
 			runasRegisteredUser(user)
+
 		elif userInput == 3:
 
 			adminFile = open('admin_file','wb')
 			regUserFile = open('regUser_file','wb')
 			prodListFile = open('product_file','wb')
+			ordersListFile = open('orders_file','wb')
 			
 			pickle.dump(adminAccounts,adminFile)
 			pickle.dump(registeredCustomers,regUserFile)
 			pickle.dump(productsList,prodListFile)
+			pickle.dump(ordersList,ordersListFile)
 			
 			adminFile.close()
 			regUserFile.close()
 			prodListFile.close()
+			ordersListFile.close()
 
 			sys.exit()
 		else:
@@ -466,6 +498,7 @@ def runAsGuest(guestUser):
 
 def runasRegisteredUser(registeredUser):
 	
+	print "******** Welcome ",registeredUser.name,"************"
 	while True:		
 		print "Press 1 to buy product"
 		print "Press 2 to view products"
@@ -475,7 +508,8 @@ def runasRegisteredUser(registeredUser):
 		print "Press 6 to make payment"
 		print "Press 7 to view products bought"
 		print "Press 8 to view payment history"
-		print "Press 9 to exit"
+		print "Press 9 to logout"
+		print "Press 10 to exit"
 
 		userInput = int(raw_input())
 
@@ -529,18 +563,29 @@ def runasRegisteredUser(registeredUser):
 			registeredUser.viewPaymentHistory()	
 
 		elif userInput == 9:
+			isAdmin = False
+			isRegisteredUser = False
+			isUnregisteredUser = True
+
+			guestUser = User(random.randint(1,101))
+			runAsGuest(guestUser)
+
+		elif userInput == 10:
 
 			adminFile = open('admin_file','wb')
 			regUserFile = open('regUser_file','wb')
 			prodListFile = open('product_file','wb')
+			ordersListFile = open('orders_file','wb')
 			
 			pickle.dump(adminAccounts,adminFile)
 			pickle.dump(registeredCustomers,regUserFile)
 			pickle.dump(productsList,prodListFile)
+			pickle.dump(ordersList,ordersListFile)
 			
 			adminFile.close()
 			regUserFile.close()
 			prodListFile.close()
+			ordersListFile.close()
 
 			sys.exit()	
 		else:
@@ -583,21 +628,24 @@ def main():
 			isAdmin = False
 			isRegisteredUser = False
 			isUnregisteredUser = True
-			user = Guest(random.randint(1,101))
+			user = Guest(random.randint(1,101)random.randint(1,101))
 			break
 		elif userInput == 5:
 
 			adminFile = open('admin_file','wb')
 			regUserFile = open('regUser_file','wb')
 			prodListFile = open('product_file','wb')
+			ordersListFile = open('orders_file','wb')
 			
 			pickle.dump(adminAccounts,adminFile)
 			pickle.dump(registeredCustomers,regUserFile)
 			pickle.dump(productsList,prodListFile)
+			pickle.dump(ordersList,ordersListFile)
 			
 			adminFile.close()
 			regUserFile.close()
 			prodListFile.close()
+			ordersListFile.close()
 
 			sys.exit()
 
@@ -622,15 +670,17 @@ if __name__ == "__main__":
 	adminFile = open('admin_file','a')
 	regUserFile = open('regUser_file','a')
 	prodListFile = open('product_file','a')
+	ordersListFile = open('orders_file','a')
 
 	adminFile.close()
 	regUserFile.close()
 	prodListFile.close()
-
+	ordersListFile.close()
 
 	adminFile = open('admin_file','rb')
 	regUserFile = open('regUser_file','rb')
 	prodListFile = open('product_file','rb')
+	ordersListFile = open('orders_file','rb')
 
 	try:
 		adminAccounts = pickle.load(adminFile)
@@ -647,11 +697,17 @@ if __name__ == "__main__":
 	except EOFError:
 		productsList = []		
 
+	try:
+		ordersList = pickle.load(ordersListFile)
+	except EOFError:
+		ordersList = []		
+
+
 	
 	adminFile.close()
 	regUserFile.close()
 	prodListFile.close()
-
+	ordersListFile.close()
 
 	adminUser = Admin(1,"prakash","q")
 	adminAccounts.append(adminUser)
@@ -661,6 +717,5 @@ if __name__ == "__main__":
 	isRegisteredUser = False
 
 	main()
-
 
 
