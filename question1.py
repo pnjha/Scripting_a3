@@ -25,6 +25,7 @@ class Admin:
     		print " "
 
     def addProduct(self,product):
+
 		productsList.append(product)
 
     def deleteProduct(self,productId):
@@ -65,6 +66,8 @@ class Customer:
 
 	def buyProduct(self):
 	
+		flag = False
+
 		print "Enter product Id "
 		prodId = raw_input()
 
@@ -74,11 +77,16 @@ class Customer:
 		for product in productsList:
 			if product.Id == prodId:
 				if quantity <= product.quantity:
-					self.addToCart(product,quantity)
+					self.addToCart(product.Id,quantity)
+					flag = True
 					break
 				else:
-					print "Unable to process request. Quantity entered is more than stock availble"	
-	
+					print "Unable to process request. Quantity entered is more than stock availble"
+					return
+
+		if flag == False:
+			return
+
 		print "Press 1 to make payment"
 		print "Press any other key to continue shopping"
 		
@@ -103,7 +111,7 @@ class Customer:
 		for product in self.cart.productsList:
 			payment.amount += product.price
 			self.productsBought.append(product)
-			self.deleteFromCart(product.Id)
+			self.deleteFromCart(product.Id,product.quantity,False)
 		self.paymentList.append(payment)	
 		  
 	def addToCart(self,productId,quantity):
@@ -121,6 +129,16 @@ class Customer:
 				self.cart.total = self.cart.total + productBought.price * productBought.quantity		
 				break
 		
+	def viewProductsBought(self):			
+		for product in self.productsBought:
+			print product.Id," ",product.name," ",product.price," ",product.quantity," ",
+			product.group," ",product.subgroup
+
+	def viewPaymentHistory(self):
+		for payment in self.paymentList:
+			print payment.customerId," ",payment.name," ",payment.amount," ",payment.cardType," ",
+			payment.cardNumber									
+
 	def viewCart(self):
 		
 		print "Number of products in the cart: ",self.cart.numberOfProduct
@@ -130,25 +148,37 @@ class Customer:
 			print item.Id," ",item.name," ",item.price," ",item.quantity," ",item.group," ",item.subgroup 			
 
 
-	def deleteFromCart(self,productId):
+	def deleteFromCart(self,productId,quantity,Flag):
 		print productId
 		flag = False
 		for product in self.cart.productsList:
-			if product.Id == productId:
+			if product.Id == productId and product.quantity >= quantity:
 
-				for item in productsList:
-					if item.Id == prodId:
-						item.quantity += product.quantity
-						flag = True
-						break
-				if flag == False:
-					productRemoved = Product(product.Id,product.name,product.price,product.quantity,
-																	product.group,product.subgroup)
-					productsList.append(productRemoved)
+				if Flag == True:
+					for item in productsList:
+						if item.Id == productId:
+							item.quantity += quantity
+							flag = True
+							break
+					
+					if flag == False:
+						productRemoved = Product(product.Id,product.name,product.price,quantity,
+																		product.group,product.subgroup)
+						productsList.append(productRemoved)
 
-				self.cart.total = self.cart.total - product.price * product.quantity
-				self.cart.numberOfProduct = self.cart.numberOfProduct - product.quantity
-				self.cart.productsList.remove(product)
+				self.cart.total = self.cart.total - product.price * quantity
+				self.cart.numberOfProduct = self.cart.numberOfProduct - quantity
+				
+				if product.quantity == quantity:
+					self.cart.productsList.remove(product)
+				
+				else:	
+					productRemoved = Product(product.Id,product.name,product.price,
+												product.quantity-quantity,product.group,product.subgroup)
+
+					self.cart.productsList.remove(product)
+					self.cart.productsList.append(productRemoved)					
+
 				break
 
 
@@ -318,7 +348,6 @@ def createNewAccount():
 		else:
 			print "Username alread in use, please re-enter a unique username"		
 
-
 def runAsAdmin(adminUser):
 	
 	while True:
@@ -444,7 +473,9 @@ def runasRegisteredUser(registeredUser):
 		print "Press 4 to add product to cart"
 		print "Press 5 to delete product from cart"
 		print "Press 6 to make payment"
-		print "Press 7 to exit"
+		print "Press 7 to view products bought"
+		print "Press 8 to view payment history"
+		print "Press 9 to exit"
 
 		userInput = int(raw_input())
 
@@ -474,7 +505,10 @@ def runasRegisteredUser(registeredUser):
 			print "Enter product id "
 			productId = raw_input()
 			
-			registeredUser.deleteFromCart(productId)
+			print "Enter quantity"
+			quantity = int(raw_input())
+
+			registeredUser.deleteFromCart(productId,quantity,True)
 				
 		elif userInput == 6:
 			print "Enter your card type"
@@ -487,6 +521,14 @@ def runasRegisteredUser(registeredUser):
 			registeredUser.makePayment(payment)
 		
 		elif userInput == 7:
+
+			registeredUser.viewProductsBought()
+
+		elif userInput == 8:
+		
+			registeredUser.viewPaymentHistory()	
+
+		elif userInput == 9:
 
 			adminFile = open('admin_file','wb')
 			regUserFile = open('regUser_file','wb')
@@ -619,5 +661,6 @@ if __name__ == "__main__":
 	isRegisteredUser = False
 
 	main()
+
 
 
