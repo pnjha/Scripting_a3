@@ -43,6 +43,7 @@ def executeCD(dirPath):
 
 def executeGrep(pattern,filePath):
 	try:
+		pattern = re.compile(pattern)
 		if os.path.isfile(filePath) == True:
 			for line in open(filePath):
 				if re.search(pattern,line):
@@ -265,7 +266,7 @@ def executeLS(commandList):
 					print(("-","x")[bool(info[ST_MODE] & stat.S_IXOTH)], end="")
 
 					print("\t",info[ST_SIZE],"\t", entry.name, end="")
-					print ("\t\t", time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(info[ST_MTIME])))
+					print ("\t\t\t", time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(info[ST_MTIME])))
 
 			except OSError:
 				print("Unable to read the given directory..")
@@ -356,6 +357,10 @@ def main():
 		elif cmdList[0] == "exit":
 
 			sys.exit()
+
+		elif cmdList[0]	== "clear":
+
+			os.system('clear')
 
 		else :
 			print("> Command not found")										
