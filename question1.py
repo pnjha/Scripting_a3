@@ -3,6 +3,7 @@ import pickle
 import sys
 import os
 import time
+import itertools
 
 class Admin:        
    
@@ -55,7 +56,6 @@ class Admin:
 				productsList.remove(product)
 				break					
 
-		 
 	def modifyProduct(self,productId):
 		
 		print "Press 1 to update name"
@@ -113,19 +113,42 @@ class Admin:
 			print "Invalid input"			
 
 	def viewOrdersPlaced(self):
+
+		totalAmount = 0
+
 		for order in ordersList:
-			print "Customer Id: ",order[0]
-			print "Product Id: ",order[1]
-			print "Product Name: ",order[2]
-			print "Product Quantity: ",order[3]
-			print "Product Price: ",order[4]			
+			print "Order Id: ", order.orderId
+			print "Customer Id: ",order.userId
+			
+			for pId,pName,pPrice,pQuantity in itertools.izip(order.productId,order.productName,order.price,order.quantity):
+				
+				print "--> Product Id: ",pId
+				print "--> Product Name: ",pName
+				print "--> Product Price: ",pPrice
+				print "--> Product Quantity: ",pQuantity
+				
+				totalAmount += float(float(pPrice) * int(pQuantity))
+			
+			print "Total amount: ",totalAmount
+			print "Product Status: ",order.status			
 			print "**************"
+			 
 
 	def makeShipment(self):
-		pass
+		print "Enter Order Id: "
+		orderId = int(raw_input())
+		for order in ordersList:
+			if orderId == order.orderId:
+				order.status = "Order Shipped"
+				break	
 
 	def confirmDelivery(self):
-		pass		         
+		print "Enter Order Id: "
+		orderId = int(raw_input())
+		for order in ordersList:
+			if orderId == order.orderId:
+				order.status = "Order Delivered"
+				break				         
 
 class Customer: 
 
@@ -137,7 +160,7 @@ class Customer:
 		self.phno = phno
 		self.cart = cart
 		self.productsBought = []
-		self.paymentList = []		
+		self.paymentList = []
 
 	def buyProduct(self):
 		try:
@@ -180,6 +203,32 @@ class Customer:
 		except ValueError:
 			print "Invalid Input"
 
+	def viewOrderStatus(self):
+		print "Enter Order Id: "
+		orderId = int(raw_input())
+
+		totalAmount = 0
+
+		for order in ordersList:
+			if orderId == order.orderId:
+				print "Order Id: ", order.orderId
+				print "Customer Id: ",order.userId
+				
+				for pId,pName,pPrice,pQuantity in itertools.izip(order.productId,order.productName,order.price,order.quantity):
+					
+					print "--> Product Id: ",pId
+					print "--> Product Name: ",pName
+					print "--> Product Price: ",pPrice
+					print "--> Product Quantity: ",pQuantity
+					
+					totalAmount += float(float(pPrice) * int(pQuantity))
+				
+				print "Total amount: ",totalAmount
+				print "Product Status: ",order.status			
+				print "**************"
+				break
+
+
 	def viewProduct(self):
 		for product in productsList:
 			print "Product Id\tProduct name\tPrice\tQuantity\tGroup\tSubGroup"
@@ -187,6 +236,14 @@ class Customer:
 			print ""
 
 	def makePayment(self,payment):
+		
+		prodId = []
+		prodName = []
+		prodQuantity = []
+		prodPrice = []
+
+		payment.amount = self.cart.total
+
 		for product in self.cart.productsList:
 
 			for prod in productsList:
@@ -196,13 +253,25 @@ class Customer:
 					if prod.quantity == 0:
 						productsList.remove(prod)	 
 
-			payment.amount += product.price
-			self.productsBought.append(product)
-			self.deleteFromCart(product.Id,product.quantity,False)
-			ordersList.append((self.Id,product.Id,product.name,product.price,product.quantity))
-		self.paymentList.append(payment)
+			prodId.append(product.Id)
+			prodName.append(product.name)
+			prodQuantity.append(product.quantity)
+			prodPrice.append(product.price)
 
-		  
+			self.productsBought.append(product)
+
+		for product in self.cart.productsList:
+
+			self.deleteFromCart(product.Id,product.quantity,False)
+			
+		order = Orders((int(round(time.time()))),self.Id,prodId,prodName,prodPrice,prodQuantity,"Order Placed")
+		ordersList.append(order)
+
+		payment.orderId = order.orderId
+
+			
+		self.paymentList.append(payment)
+	  
 	def addToCart(self,productId,quantity):
 		for product in productsList:
 			if product.Id == productId:
@@ -216,11 +285,23 @@ class Customer:
 		
 	def viewProductsBought(self):			
 		for product in self.productsBought:
-			print product.Id," ",product.name," ",product.price," ",product.quantity," ",product.group," ",product.subgroup
+			print "Product Id: ",product.Id
+			print "Product Name: ",product.name
+			print "Price: ",product.price
+			print "Quantity: ",product.quantity
+			print "Group: ",product.group
+			print "SubGroup: ",product.subgroup
+			print "**********************"
 
 	def viewPaymentHistory(self):
 		for payment in self.paymentList:
-			print payment.customerId," ",payment.name," ",payment.amount," ",payment.cardType," ",payment.cardNumber									
+			print "Order Id: ",payment.orderId
+			print "Customer Id: ",payment.customerId
+			print "Customer Name: ",payment.name
+			print "Amount: ",payment.amount
+			print "Card Type: ",payment.cardType
+			print "Card Number: ",payment.cardNumber									
+			print "**********************"
 
 	def viewCart(self):
 		
@@ -230,27 +311,41 @@ class Customer:
 		for item in self.cart.productsList:
 			print item.Id," ",item.name," ",item.price," ",item.quantity," ",item.group," ",item.subgroup 			
 
-
 	def deleteFromCart(self,productId,quantity,Flag):
-		print productId
-		flag = False
-		for product in self.cart.productsList:
-			if product.Id == productId and product.quantity >= quantity:
+			
+		if Flag == True:
+			for product in self.cart.productsList:
+				if product.Id == productId and product.quantity >= quantity:
 
-				self.cart.total = self.cart.total - product.price * quantity
-				self.cart.numberOfProduct = self.cart.numberOfProduct - quantity
-				
-				if product.quantity == quantity:
-					self.cart.productsList.remove(product)
-				
-				else:	
-					productRemoved = Product(product.Id,product.name,product.price,
-												product.quantity-quantity,product.group,product.subgroup)
+					self.cart.total = self.cart.total - product.price * quantity
+					self.cart.numberOfProduct = self.cart.numberOfProduct - quantity
+					
+					if product.quantity == quantity:
+						self.cart.productsList.remove(product)
+					
+					else:	
+						productRemoved = Product(product.Id,product.name,product.price,product.quantity-quantity,product.group,product.subgroup)
 
-					self.cart.productsList.remove(product)
-					self.cart.productsList.append(productRemoved)					
+						self.cart.productsList.remove(product)
+						self.cart.productsList.append(productRemoved)					
 
-				break
+					break
+
+		elif Flag == False:
+			self.cart.productsList = []
+			self.cart.numberOfProduct = 0
+			self.cart.total = 0.0
+
+class Orders:
+
+	def __init__(self,orderId,userId,productId,productName,price,quantity,status):
+		self.orderId = orderId
+		self.userId = userId
+		self.productId = productId
+		self.productName = productName
+		self.price = price
+		self.quantity = quantity
+		self.status = status
 
 class Product: 
    
@@ -287,6 +382,7 @@ class Cart:
 class Payment: 
 
     def __init__(self,customerId,name,cardType,cardNumber):
+		self.orderId = -1
 		self.customerId = customerId
 		self.name = name
 		self.amount = 0
@@ -628,10 +724,11 @@ def runasRegisteredUser(registeredUser):
 			print "Press 4 to add product to cart"
 			print "Press 5 to delete product from cart"
 			print "Press 6 to make payment"
-			print "Press 7 to view products bought"
-			print "Press 8 to view payment history"
-			print "Press 9 to logout"
-			print "Press 10 to exit"
+			print "Press 7 to view products ordered"
+			print "Press 8 to view order status"
+			print "Press 9 to view payment history"
+			print "Press 10 to logout"
+			print "Press 11 to exit"
 
 			userInput = int(raw_input())
 
@@ -681,10 +778,14 @@ def runasRegisteredUser(registeredUser):
 				registeredUser.viewProductsBought()
 
 			elif userInput == 8:
+
+				registeredUser.viewOrderStatus()	
+
+			elif userInput == 9:
 			
 				registeredUser.viewPaymentHistory()	
 
-			elif userInput == 9:
+			elif userInput == 10:
 				isAdmin = False
 				isRegisteredUser = False
 				isUnregisteredUser = True
@@ -692,7 +793,7 @@ def runasRegisteredUser(registeredUser):
 				guestUser = Guest(random.randint(1,101))
 				runAsGuest(guestUser)
 
-			elif userInput == 10:
+			elif userInput == 11:
 
 				adminFile = open('admin_file','wb')
 				regUserFile = open('regUser_file','wb')

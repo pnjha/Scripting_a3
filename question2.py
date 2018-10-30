@@ -360,7 +360,7 @@ def main():
 
 		elif cmdList[0]	== "clear":
 
-			os.system('clear')
+			sys.stderr.write("\x1b[2J\x1b[H")
 
 		else :
 			print("> Command not found")										
