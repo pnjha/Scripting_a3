@@ -1,3 +1,4 @@
+import string
 import os
 import sys
 import time
@@ -302,8 +303,18 @@ def executeLS(commandList):
 		print("> Invalid input")
 
 def executeTR(commandList):
-	pass
 
+	while True:
+		print ("> Enter string",  end = " ")
+		userInput = input()
+		
+		userInput = userInput.translate(str.maketrans(commandList[1],commandList[2]))
+		print (userInput)
+
+		print("> Do you want continue(y/n)", end = " ")
+		userInput = input()
+		if userInput == "n" or userInput == "N":
+			break
 
 def main():
 	while True:
