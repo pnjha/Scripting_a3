@@ -138,7 +138,7 @@ class Admin:
 		print "Enter Order Id: "
 		orderId = int(raw_input())
 		for order in ordersList:
-			if orderId == order.orderId:
+			if orderId == order.orderId and order.status == "Order Placed":
 				order.status = "Order Shipped"
 				break	
 
@@ -146,7 +146,7 @@ class Admin:
 		print "Enter Order Id: "
 		orderId = int(raw_input())
 		for order in ordersList:
-			if orderId == order.orderId:
+			if orderId == order.orderId and order.status == "Order Shipped":
 				order.status = "Order Delivered"
 				break				         
 
