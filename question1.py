@@ -4,6 +4,8 @@ import sys
 import os
 import time
 import itertools
+import numpy as np
+import matplotlib.pyplot as plt
 
 class Admin:        
    
@@ -133,7 +135,6 @@ class Admin:
 			print "Product Status: ",order.status			
 			print "**************"
 			 
-
 	def makeShipment(self):
 		print "Enter Order Id: "
 		orderId = int(raw_input())
@@ -148,7 +149,85 @@ class Admin:
 		for order in ordersList:
 			if orderId == order.orderId and order.status == "Order Shipped":
 				order.status = "Order Delivered"
-				break				         
+				break	
+
+	def plotCustomerBuyingTrend(self):
+
+		productCount = []
+		purchasedAmount = []
+		userName = []
+
+		for user in registeredCustomers:
+			
+			userName.append(user.Id)
+
+			pCounter = 0
+			aCounter = 0
+			for orders in ordersList:
+				if orders.userId == user.Id:
+					pCounter += 1
+					for pPrice in orders.price:
+						aCounter += pPrice
+
+			productCount.append(pCounter)		
+			purchasedAmount.append(aCounter)
+			aCounter = 0
+			pCounter = 0
+
+		x_pos = np.arange(len(userName))	
+
+		bar_width = 0.35
+		opacity = 0.8
+
+		plt.bar(x_pos, purchasedAmount,bar_width,color='b',alpha=opacity, label = 'Total amount of goods purchased')
+		plt.xlabel('User name')
+		plt.ylabel('Amount(Rs)')
+		plt.title('Amount of money spend per user')
+		plt.xticks(x_pos, userName)
+		plt.savefig('amount.png')
+
+		plt.clf()
+
+		plt.bar(x_pos, productCount, bar_width,color='g',alpha=opacity, label = 'Total number of goods bought')	
+		plt.xlabel('User name')
+		plt.ylabel('No of products bought')
+		plt.title('Number of products bought per user')
+		plt.xticks(x_pos, userName)
+		plt.savefig('quantity.png')
+
+		plt.clf()
+
+	def plotProductSaleTrend(self):
+		
+		productQuantity = []
+		productName = []
+
+		quantity = 0
+
+		for product in productsList:
+			productName.append(product.name)
+			for orders in ordersList:
+				for pName in orders.productName:	
+					if product.name == pName:
+						quantity += 1
+
+			productQuantity.append(quantity)
+			quantity = 0			
+
+		x_pos = np.arange(len(productName))	
+
+		bar_width = 0.35
+		opacity = 0.8
+
+		plt.bar(x_pos, productQuantity,bar_width,color='b',alpha=opacity, label = 'Total sale of each product')
+		plt.xlabel('Product name')
+		plt.ylabel('Sale')
+		plt.title('Sale per product')
+		plt.xticks(x_pos, productName)
+		plt.savefig('product.png')
+
+		plt.clf()
+						
 
 class Customer: 
 
@@ -560,8 +639,10 @@ def runAsAdmin(adminUser):
 			print "Press 6 to view orders placed"
 			print "Press 7 to make shipment"
 			print "Press 8 to confirm delivery"
-			print "Press 9 to logout"
-			print "Press 10 to exit"
+			print "Press 9 to view number of products bought per user"
+			print "Press 10 to view sale of each product"
+			print "Press 11 to logout"
+			print "Press 12 to exit"
 
 			userInput = int(raw_input())
 
@@ -616,6 +697,14 @@ def runAsAdmin(adminUser):
 				adminUser.confirmDelivery()	
 
 			elif userInput == 9:
+
+				adminUser.plotCustomerBuyingTrend()
+			
+			elif userInput == 10:
+
+				adminUser.plotProductSaleTrend()
+
+			elif userInput == 11:
 				isAdmin = False
 				isRegisteredUser = False
 				isUnregisteredUser = True
@@ -623,7 +712,7 @@ def runAsAdmin(adminUser):
 				guestUser = Guest(random.randint(1,101))
 				runAsGuest(guestUser)	
 
-			elif userInput == 10:
+			elif userInput == 12:
 
 				adminFile = open('admin_file','wb')
 				regUserFile = open('regUser_file','wb')
@@ -643,6 +732,7 @@ def runAsAdmin(adminUser):
 				sys.exit()	
 
 			else :
+
 				print "Invalid input"		
 
 	except ValueError:
